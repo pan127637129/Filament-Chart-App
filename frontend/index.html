@@ -6,48 +6,58 @@
   <title>Filament Charts</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: system-ui, -apple-system, sans-serif; height: 100vh; display: flex; flex-direction: column; background: #f5f5f5; }
-    header { background: #2c3e50; color: white; padding: 1rem 1.5rem; display: flex; justify-content: space-between; align-items: center; }
+    body { font-family: system-ui, -apple-system, sans-serif; height: 100vh; display: flex; flex-direction: column; background: #f8f4ef; color: #333; }
+    header { background: #5c4d3c; color: #f8f4ef; padding: 1rem 1.5rem; display: flex; justify-content: space-between; align-items: center; }
     header h1 { font-size: 1.4rem; }
-    header p { font-size: 0.85rem; opacity: 0.8; margin-top: 0.2rem; }
-    .header-actions button { margin-left: 0.5rem; }
+    header p { font-size: 0.85rem; opacity: 0.85; margin-top: 0.2rem; }
+    .header-actions { display: flex; gap: 0.5rem; }
+    .header-actions button { padding: 0.5rem 1rem; border-radius: 6px; font-weight: 500; border: none; cursor: pointer; }
+    #importBtn { background: #e8dcc8; color: #5c4d3c; }
+    #exportBtn { background: #d4c4a8; color: #5c4d3c; }
+    #settingsBtn { background: #c9b896; color: #5c4d3c; }
+    .header-actions button:hover { filter: brightness(1.05); }
     .main { display: flex; flex: 1; overflow: hidden; }
     .left, .right { flex: 1; padding: 1rem; overflow-y: auto; }
-    .left { border-right: 1px solid #ddd; background: white; max-width: 420px; }
-    .right { background: #fafafa; }
+    .left { border-right: 1px solid #e0d6c8; background: #fffefb; max-width: 420px; }
+    .right { background: #f8f4ef; }
     .add-form { display: flex; gap: 0.5rem; margin-bottom: 0.75rem; flex-wrap: wrap; align-items: center; }
-    .add-form input, .add-form button { padding: 0.4rem 0.6rem; }
-    .add-form input[type="color"] { width: 40px; height: 32px; padding: 0; border: 1px solid #ccc; }
+    .add-form input, .add-form button { padding: 0.4rem 0.6rem; border-radius: 4px; border: 1px solid #ddd; }
+    .add-form input[type="color"] { width: 40px; height: 32px; padding: 0; }
     .add-form input[type="text"] { flex: 1; min-width: 120px; }
     .toolbar { margin-bottom: 0.75rem; }
-    .toolbar button { margin-right: 0.5rem; }
+    .toolbar button { margin-right: 0.5rem; padding: 0.4rem 0.8rem; border-radius: 4px; }
     .color-list { list-style: none; }
     .color-item { display: flex; align-items: center; gap: 0.5rem; padding: 0.4rem 0.3rem; border-bottom: 1px solid #eee; cursor: default; }
-    .color-item:hover { background: #f0f0f0; }
+    .color-item:hover { background: #f5f0e6; }
     .drag-handle { cursor: grab; color: #999; user-select: none; }
     .color-chip { width: 28px; height: 28px; border-radius: 4px; border: 1px solid #ccc; flex-shrink: 0; }
     .color-info { flex: 1; min-width: 0; }
     .color-info .name { font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .color-info .hex { font-size: 0.75rem; color: #666; }
-    .item-actions button { margin-left: 0.2rem; padding: 0.2rem 0.4rem; font-size: 0.75rem; }
+    .item-actions button { margin-left: 0.2rem; padding: 0.2rem 0.4rem; font-size: 0.75rem; border-radius: 3px; }
     .settings { display: grid; grid-template-columns: 1fr 1fr; gap: 0.6rem; margin-bottom: 1rem; }
     .settings label { display: flex; flex-direction: column; font-size: 0.85rem; }
-    .settings input, .settings select { margin-top: 0.2rem; padding: 0.3rem; }
-    canvas { border: 1px solid #ddd; background: white; max-width: 100%; display: block; margin: 0.5rem auto; }
+    .settings input, .settings select { margin-top: 0.2rem; padding: 0.3rem; border-radius: 4px; border: 1px solid #ddd; }
+    .bg-group { display: flex; gap: 0.4rem; align-items: center; }
+    .bg-group input[type="color"] { width: 40px; height: 32px; }
+    .bg-group input[type="text"] { flex: 1; }
+    canvas { border: 1px solid #e0d6c8; background: white; max-width: 100%; display: block; margin: 0.5rem auto; }
     .download-btns { text-align: center; margin: 0.5rem 0; }
-    .download-btns button { margin: 0 0.5rem; padding: 0.5rem 1rem; }
+    .download-btns button { padding: 0.6rem 1.2rem; border-radius: 6px; font-weight: 500; background: #5c4d3c; color: #f8f4ef; border: none; }
+    .download-btns button:hover { filter: brightness(1.1); }
     .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 100; align-items: center; justify-content: center; }
     .modal.show { display: flex; }
-    .modal-content { background: white; padding: 1.5rem; border-radius: 8px; min-width: 300px; }
-    .modal-content h3 { margin-bottom: 1rem; }
-    .modal-content label { display: block; margin-bottom: 0.5rem; }
+    .modal-content { background: #fffefb; padding: 1.5rem; border-radius: 8px; min-width: 320px; max-width: 90vw; }
+    .modal-content h3 { margin-bottom: 1rem; color: #5c4d3c; }
+    .modal-content label { display: block; margin-bottom: 0.6rem; font-size: 0.9rem; }
+    .modal-content input, .modal-content select { width: 100%; margin-top: 0.2rem; padding: 0.4rem; border-radius: 4px; border: 1px solid #ddd; }
     .modal-actions { margin-top: 1rem; text-align: right; }
-    .modal-actions button { margin-left: 0.5rem; }
+    .modal-actions button { margin-left: 0.5rem; padding: 0.4rem 0.8rem; border-radius: 4px; }
     .empty { text-align: center; color: #888; padding: 2rem; }
     button { cursor: pointer; border: 1px solid #ccc; background: white; border-radius: 4px; }
-    button:hover { background: #f0f0f0; }
-    button.primary { background: #3498db; color: white; border-color: #2980b9; }
-    button.danger { background: #e74c3c; color: white; border-color: #c0392b; }
+    button:hover { background: #f5f0e6; }
+    button.primary { background: #5c4d3c; color: #f8f4ef; border-color: #4a3d2e; }
+    button.danger { background: #c0392b; color: white; border-color: #a93226; }
   </style>
 </head>
 <body>
@@ -59,6 +69,7 @@
     <div class="header-actions">
       <button id="importBtn">Import library</button>
       <button id="exportBtn">Export library</button>
+      <button id="settingsBtn">Settings</button>
     </div>
   </header>
   <div class="main">
@@ -77,17 +88,19 @@
     </div>
     <div class="right">
       <div class="settings">
-        <label>Background <input type="color" id="bgColor" value="#ffffff"></label>
+        <label>Background
+          <div class="bg-group">
+            <input type="color" id="bgColor" value="#ffffff">
+            <input type="text" id="bgHex" placeholder="#RRGGBB" maxlength="7">
+          </div>
+        </label>
         <label>Title <input type="text" id="chartTitle" placeholder="Optional title"></label>
         <label>Columns (1–8) <input type="number" id="columns" min="1" max="8" value="4"></label>
         <label>Swatch size (48–180) <input type="number" id="swatchSize" min="48" max="180" value="80"></label>
         <label>Horizontal gap (0–160) <input type="number" id="gapX" min="0" max="160" value="16"></label>
         <label>Vertical gap (0–160) <input type="number" id="gapY" min="0" max="160" value="24"></label>
       </div>
-      <div class="download-btns">
-        <button id="downloadTop" class="primary">Download PNG</button>
-      </div>
-      <canvas id="preview" width="800" height="600"></canvas>
+      <canvas id="preview" width="400" height="200"></canvas>
       <div class="download-btns">
         <button id="downloadBottom" class="primary">Download PNG</button>
       </div>
@@ -107,9 +120,62 @@
     </div>
   </div>
 
+  <div class="modal" id="settingsModal">
+    <div class="modal-content">
+      <h3>Chart Settings</h3>
+      <label>Title font
+        <select id="titleFont">
+          <option value="system-ui">System UI</option>
+          <option value="serif">Serif</option>
+          <option value="sans-serif">Sans-serif</option>
+          <option value="monospace">Monospace</option>
+          <option value="Georgia">Georgia</option>
+          <option value="Arial">Arial</option>
+        </select>
+      </label>
+      <label>Title size (px) <input type="number" id="titleSize" min="12" max="72" value="20"></label>
+      <label>Export resolution
+        <select id="exportRes">
+          <option value="native">Native (content size)</option>
+          <option value="1080" selected>At least 1080p</option>
+          <option value="1440">1440p</option>
+          <option value="2160">4K (2160p)</option>
+        </select>
+      </label>
+      <label>Aspect ratio
+        <select id="aspectRatio">
+          <option value="auto">Auto (fit swatches)</option>
+          <option value="1:1">1:1</option>
+          <option value="4:3">4:3</option>
+          <option value="16:9">16:9</option>
+          <option value="21:9">21:9</option>
+          <option value="3:2">3:2</option>
+        </select>
+      </label>
+      <div class="modal-actions">
+        <button id="settingsCancel">Close</button>
+        <button id="settingsSave" class="primary">Save</button>
+      </div>
+    </div>
+  </div>
+
   <script>
     const STORAGE_KEY = 'filament-chart-library-v1';
-    let library = { colors: [], settings: { background: '#FFFFFF', title: '', columns: 4, swatch: 80, gapX: 16, gapY: 24 } };
+    let library = {
+      colors: [],
+      settings: {
+        background: '#FFFFFF',
+        title: '',
+        columns: 4,
+        swatch: 80,
+        gapX: 16,
+        gapY: 24,
+        titleFont: 'system-ui',
+        titleSize: 20,
+        exportRes: '1080',
+        aspectRatio: 'auto'
+      }
+    };
     let editingId = null;
     let dragSrcIndex = null;
 
@@ -133,7 +199,13 @@
         const raw = localStorage.getItem(STORAGE_KEY);
         if (raw) {
           const data = JSON.parse(raw);
-          if (data.colors && Array.isArray(data.colors)) library = data;
+          if (data.colors && Array.isArray(data.colors)) {
+            library = data;
+            if (!library.settings.titleFont) library.settings.titleFont = 'system-ui';
+            if (!library.settings.titleSize) library.settings.titleSize = 20;
+            if (!library.settings.exportRes) library.settings.exportRes = '1080';
+            if (!library.settings.aspectRatio) library.settings.aspectRatio = 'auto';
+          }
         }
       } catch (e) { console.error(e); }
       applySettingsToUI();
@@ -144,24 +216,189 @@
     function applySettingsToUI() {
       const s = library.settings;
       document.getElementById('bgColor').value = s.background || '#ffffff';
+      document.getElementById('bgHex').value = s.background || '#FFFFFF';
       document.getElementById('chartTitle').value = s.title || '';
       document.getElementById('columns').value = s.columns || 4;
       document.getElementById('swatchSize').value = s.swatch || 80;
       document.getElementById('gapX').value = s.gapX || 16;
       document.getElementById('gapY').value = s.gapY || 24;
+      document.getElementById('titleFont').value = s.titleFont || 'system-ui';
+      document.getElementById('titleSize').value = s.titleSize || 20;
+      document.getElementById('exportRes').value = s.exportRes || '1080';
+      document.getElementById('aspectRatio').value = s.aspectRatio || 'auto';
     }
 
     function updateSettingsFromUI() {
+      const bg = normalizeHex(document.getElementById('bgHex').value) || document.getElementById('bgColor').value.toUpperCase();
       library.settings = {
-        background: document.getElementById('bgColor').value.toUpperCase(),
+        background: bg,
         title: document.getElementById('chartTitle').value,
         columns: Math.max(1, Math.min(8, parseInt(document.getElementById('columns').value) || 4)),
         swatch: Math.max(48, Math.min(180, parseInt(document.getElementById('swatchSize').value) || 80)),
         gapX: Math.max(0, Math.min(160, parseInt(document.getElementById('gapX').value) || 16)),
-        gapY: Math.max(0, Math.min(160, parseInt(document.getElementById('gapY').value) || 24))
+        gapY: Math.max(0, Math.min(160, parseInt(document.getElementById('gapY').value) || 24)),
+        titleFont: document.getElementById('titleFont').value || 'system-ui',
+        titleSize: Math.max(12, Math.min(72, parseInt(document.getElementById('titleSize').value) || 20)),
+        exportRes: document.getElementById('exportRes').value || '1080',
+        aspectRatio: document.getElementById('aspectRatio').value || 'auto'
       };
+      document.getElementById('bgColor').value = library.settings.background;
+      document.getElementById('bgHex').value = library.settings.background;
       saveLibrary();
       drawPreview();
+    }
+
+    function computeContentSize(selected, s) {
+      const cols = s.columns;
+      const sw = s.swatch;
+      const gx = s.gapX;
+      const gy = s.gapY;
+      const titleH = s.title ? (s.titleSize + 20) : 0;
+      const rows = Math.ceil(selected.length / cols) || 1;
+      const contentW = cols * sw + (cols + 1) * gx;
+      const contentH = titleH + rows * (sw + 40) + (rows + 1) * gy;
+      return { contentW, contentH, titleH, rows, cols, sw, gx, gy };
+    }
+
+    function applyAspectRatio(contentW, contentH, aspect) {
+      if (aspect === 'auto' || !aspect) return { w: contentW, h: contentH };
+      const [aw, ah] = aspect.split(':').map(Number);
+      if (!aw || !ah) return { w: contentW, h: contentH };
+      const targetRatio = aw / ah;
+      const contentRatio = contentW / contentH;
+      if (contentRatio > targetRatio) {
+        return { w: contentW, h: contentW / targetRatio };
+      } else {
+        return { w: contentH * targetRatio, h: contentH };
+      }
+    }
+
+    function drawPreview() {
+      const canvas = document.getElementById('preview');
+      const ctx = canvas.getContext('2d');
+      const selected = library.colors.filter(c => c.selected);
+      const s = library.settings;
+      const { contentW, contentH, titleH, rows, cols, sw, gx, gy } = computeContentSize(selected, s);
+      const { w, h } = applyAspectRatio(contentW, contentH, s.aspectRatio);
+
+      canvas.width = Math.max(w, 100);
+      canvas.height = Math.max(h, 80);
+      ctx.fillStyle = s.background;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      if (selected.length === 0) {
+        ctx.fillStyle = '#888';
+        ctx.font = '16px system-ui';
+        ctx.textAlign = 'center';
+        ctx.fillText('No colors selected', canvas.width / 2, canvas.height / 2);
+        return;
+      }
+
+      const offsetX = (canvas.width - contentW) / 2;
+      const offsetY = (canvas.height - contentH) / 2;
+
+      if (s.title) {
+        ctx.fillStyle = '#222';
+        ctx.font = `bold ${s.titleSize}px ${s.titleFont}`;
+        ctx.textAlign = 'left';
+        ctx.fillText(s.title, offsetX + gx, offsetY + s.titleSize + 4);
+      }
+
+      selected.forEach((c, idx) => {
+        const col = idx % cols;
+        const row = Math.floor(idx / cols);
+        const x = offsetX + gx + col * (sw + gx);
+        const y = offsetY + titleH + gy + row * (sw + 40 + gy);
+        ctx.beginPath();
+        const r = 10;
+        ctx.moveTo(x + r, y);
+        ctx.arcTo(x + sw, y, x + sw, y + sw, r);
+        ctx.arcTo(x + sw, y + sw, x, y + sw, r);
+        ctx.arcTo(x, y + sw, x, y, r);
+        ctx.arcTo(x, y, x + sw, y, r);
+        ctx.closePath();
+        ctx.fillStyle = c.hex;
+        ctx.fill();
+        ctx.fillStyle = '#111';
+        ctx.font = '12px system-ui';
+        ctx.textAlign = 'center';
+        const name = c.name.length > 16 ? c.name.slice(0, 14) + '…' : c.name;
+        ctx.fillText(name, x + sw / 2, y + sw + 16);
+        ctx.font = '11px system-ui';
+        ctx.fillStyle = '#555';
+        ctx.fillText(c.hex, x + sw / 2, y + sw + 30);
+      });
+    }
+
+    function renderHighResCanvas() {
+      const selected = library.colors.filter(c => c.selected);
+      const s = library.settings;
+      const { contentW, contentH, titleH, rows, cols, sw, gx, gy } = computeContentSize(selected, s);
+      let { w, h } = applyAspectRatio(contentW, contentH, s.aspectRatio);
+
+      let scale = 1;
+      const res = s.exportRes;
+      if (res === '1080') {
+        scale = Math.max(1, 1080 / h);
+      } else if (res === '1440') {
+        scale = Math.max(1, 1440 / h);
+      } else if (res === '2160') {
+        scale = Math.max(1, 2160 / h);
+      }
+
+      const outW = Math.round(w * scale);
+      const outH = Math.round(h * scale);
+      const canvas = document.createElement('canvas');
+      canvas.width = outW;
+      canvas.height = outH;
+      const ctx = canvas.getContext('2d');
+      ctx.scale(scale, scale);
+      ctx.fillStyle = s.background;
+      ctx.fillRect(0, 0, w, h);
+
+      if (selected.length === 0) {
+        ctx.fillStyle = '#888';
+        ctx.font = '16px system-ui';
+        ctx.textAlign = 'center';
+        ctx.fillText('No colors selected', w / 2, h / 2);
+        return canvas;
+      }
+
+      const offsetX = (w - contentW) / 2;
+      const offsetY = (h - contentH) / 2;
+
+      if (s.title) {
+        ctx.fillStyle = '#222';
+        ctx.font = `bold ${s.titleSize}px ${s.titleFont}`;
+        ctx.textAlign = 'left';
+        ctx.fillText(s.title, offsetX + gx, offsetY + s.titleSize + 4);
+      }
+
+      selected.forEach((c, idx) => {
+        const col = idx % cols;
+        const row = Math.floor(idx / cols);
+        const x = offsetX + gx + col * (sw + gx);
+        const y = offsetY + titleH + gy + row * (sw + 40 + gy);
+        ctx.beginPath();
+        const r = 10;
+        ctx.moveTo(x + r, y);
+        ctx.arcTo(x + sw, y, x + sw, y + sw, r);
+        ctx.arcTo(x + sw, y + sw, x, y + sw, r);
+        ctx.arcTo(x, y + sw, x, y, r);
+        ctx.arcTo(x, y, x + sw, y, r);
+        ctx.closePath();
+        ctx.fillStyle = c.hex;
+        ctx.fill();
+        ctx.fillStyle = '#111';
+        ctx.font = '12px system-ui';
+        ctx.textAlign = 'center';
+        const name = c.name.length > 16 ? c.name.slice(0, 14) + '…' : c.name;
+        ctx.fillText(name, x + sw / 2, y + sw + 16);
+        ctx.font = '11px system-ui';
+        ctx.fillStyle = '#555';
+        ctx.fillText(c.hex, x + sw / 2, y + sw + 30);
+      });
+      return canvas;
     }
 
     function renderList() {
@@ -195,67 +432,6 @@
       return s.replace(/[&<>"']/g, m => ({'&':'&','<':'<','>':'>','"':'"',"'":'&#39;'}[m]));
     }
 
-    function drawPreview() {
-      const canvas = document.getElementById('preview');
-      const ctx = canvas.getContext('2d');
-      const selected = library.colors.filter(c => c.selected);
-      const s = library.settings;
-      const cols = s.columns;
-      const sw = s.swatch;
-      const gx = s.gapX;
-      const gy = s.gapY;
-      const titleH = s.title ? 40 : 0;
-      const rows = Math.ceil(selected.length / cols) || 1;
-      const w = cols * sw + (cols + 1) * gx;
-      const h = titleH + rows * (sw + 40) + (rows + 1) * gy;
-      canvas.width = Math.max(w, 400);
-      canvas.height = Math.max(h, 200);
-      ctx.fillStyle = s.background;
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-      if (selected.length === 0) {
-        ctx.fillStyle = '#888';
-        ctx.font = '16px system-ui';
-        ctx.textAlign = 'center';
-        ctx.fillText('No colors selected', canvas.width / 2, canvas.height / 2);
-        return;
-      }
-
-      if (s.title) {
-        ctx.fillStyle = '#222';
-        ctx.font = 'bold 20px system-ui';
-        ctx.textAlign = 'left';
-        ctx.fillText(s.title, gx, 28);
-      }
-
-      selected.forEach((c, idx) => {
-        const col = idx % cols;
-        const row = Math.floor(idx / cols);
-        const x = gx + col * (sw + gx);
-        const y = titleH + gy + row * (sw + 40 + gy);
-        // rounded rect
-        ctx.beginPath();
-        const r = 10;
-        ctx.moveTo(x + r, y);
-        ctx.arcTo(x + sw, y, x + sw, y + sw, r);
-        ctx.arcTo(x + sw, y + sw, x, y + sw, r);
-        ctx.arcTo(x, y + sw, x, y, r);
-        ctx.arcTo(x, y, x + sw, y, r);
-        ctx.closePath();
-        ctx.fillStyle = c.hex;
-        ctx.fill();
-        // name + hex
-        ctx.fillStyle = '#111';
-        ctx.font = '12px system-ui';
-        ctx.textAlign = 'center';
-        const name = c.name.length > 16 ? c.name.slice(0, 14) + '…' : c.name;
-        ctx.fillText(name, x + sw / 2, y + sw + 16);
-        ctx.font = '11px system-ui';
-        ctx.fillStyle = '#555';
-        ctx.fillText(c.hex, x + sw / 2, y + sw + 30);
-      });
-    }
-
     // Events
     document.getElementById('addBtn').onclick = () => {
       const name = document.getElementById('addName').value.trim();
@@ -278,6 +454,16 @@
     document.getElementById('addHex').oninput = e => {
       const n = normalizeHex(e.target.value);
       if (n) document.getElementById('addColor').value = n;
+    };
+
+    document.getElementById('bgColor').oninput = e => {
+      document.getElementById('bgHex').value = e.target.value.toUpperCase();
+      updateSettingsFromUI();
+    };
+    document.getElementById('bgHex').oninput = e => {
+      const n = normalizeHex(e.target.value);
+      if (n) document.getElementById('bgColor').value = n;
+      updateSettingsFromUI();
     };
 
     document.getElementById('selectAllBtn').onclick = () => {
@@ -346,8 +532,8 @@
       dragSrcIndex = null;
     });
 
-    // Settings
-    ['bgColor', 'chartTitle', 'columns', 'swatchSize', 'gapX', 'gapY'].forEach(id => {
+    // Settings live
+    ['chartTitle', 'columns', 'swatchSize', 'gapX', 'gapY'].forEach(id => {
       document.getElementById(id).oninput = updateSettingsFromUI;
     });
 
@@ -377,7 +563,20 @@
       saveLibrary(); renderList(); drawPreview();
     };
 
-    // Import / Export / Download using Tauri plugins (withGlobalTauri)
+    // Settings modal
+    document.getElementById('settingsBtn').onclick = () => {
+      applySettingsToUI();
+      document.getElementById('settingsModal').classList.add('show');
+    };
+    document.getElementById('settingsCancel').onclick = () => {
+      document.getElementById('settingsModal').classList.remove('show');
+    };
+    document.getElementById('settingsSave').onclick = () => {
+      updateSettingsFromUI();
+      document.getElementById('settingsModal').classList.remove('show');
+    };
+
+    // Import / Export / Download
     async function getTauri() {
       return window.__TAURI__ || {};
     }
@@ -406,7 +605,11 @@
           const data = JSON.parse(text);
           if (data.colors && Array.isArray(data.colors)) {
             library = data;
-            if (!library.settings) library.settings = { background: '#FFFFFF', title: '', columns: 4, swatch: 80, gapX: 16, gapY: 24 };
+            if (!library.settings) library.settings = {};
+            if (!library.settings.titleFont) library.settings.titleFont = 'system-ui';
+            if (!library.settings.titleSize) library.settings.titleSize = 20;
+            if (!library.settings.exportRes) library.settings.exportRes = '1080';
+            if (!library.settings.aspectRatio) library.settings.aspectRatio = 'auto';
             saveLibrary();
             applySettingsToUI();
             renderList();
@@ -422,7 +625,7 @@
         const { save } = (await getTauri()).dialog || {};
         const { writeFile } = (await getTauri()).fs || {};
         if (!save || !writeFile) { alert('Tauri not available for save.'); return; }
-        const canvas = document.getElementById('preview');
+        const canvas = renderHighResCanvas();
         const dataUrl = canvas.toDataURL('image/png');
         const base64 = dataUrl.split(',')[1];
         const binary = Uint8Array.from(atob(base64), c => c.charCodeAt(0));
@@ -433,7 +636,6 @@
         }
       } catch (e) { alert('Download failed: ' + e); }
     }
-    document.getElementById('downloadTop').onclick = downloadPng;
     document.getElementById('downloadBottom').onclick = downloadPng;
 
     // Init
