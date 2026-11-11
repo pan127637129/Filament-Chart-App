@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Filament Charts</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: system-ui, -apple-system, sans-serif; height: 100vh; display: flex; flex-direction: column; background: #f5f5f5; }
+    header { background: #2c3e50; color: white; padding: 1rem 1.5rem; display: flex; justify-content: space-between; align-items: center; }
+    header h1 { font-size: 1.4rem; }
+    header p { font-size: 0.85rem; opacity: 0.8; margin-top: 0.2rem; }
+    .header-actions button { margin-left: 0.5rem; }
+    .main { display: flex; flex: 1; overflow: hidden; }
+    .left, .right { flex: 1; padding: 1rem; overflow-y: auto; }
+    .left { border-right: 1px solid #ddd; background: white; max-width: 420px; }
+    .right { background: #fafafa; }
+    .add-form { display: flex; gap: 0.5rem; margin-bottom: 0.75rem; flex-wrap: wrap; align-items: center; }
+    .add-form input, .add-form button { padding: 0.4rem 0.6rem; }
+    .add-form input[type="color"] { width: 40px; height: 32px; padding: 0; border: 1px solid #ccc; }
+    .add-form input[type="text"] { flex: 1; min-width: 120px; }
+    .toolbar { margin-bottom: 0.75rem; }
+    .toolbar button { margin-right: 0.5rem; }
+    .color-list { list-style: none; }
+    .color-item { display: flex; align-items: center; gap: 0.5rem; padding: 0.4rem 0.3rem; border-bottom: 1px solid #eee; cursor: default; }
+    .color-item:hover { background: #f0f0f0; }
+    .drag-handle { cursor: grab; color: #999; user-select: none; }
+    .color-chip { width: 28px; height: 28px; border-radius: 4px; border: 1px solid #ccc; flex-shrink: 0; }
+    .color-info { flex: 1; min-width: 0; }
+    .color-info .name { font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .color-info .hex { font-size: 0.75rem; color: #666; }
+    .item-actions button { margin-left: 0.2rem; padding: 0.2rem 0.4rem; font-size: 0.75rem; }
+    .settings { display: grid; grid-template-columns: 1fr 1fr; gap: 0.6rem; margin-bottom: 1rem; }
+    .settings label { display: flex; flex-direction: column; font-size: 0.85rem; }
+    .settings input, .settings select { margin-top: 0.2rem; padding: 0.3rem; }
+    canvas { border: 1px solid #ddd; background: white; max-width: 100%; display: block; margin: 0.5rem auto; }
+    .download-btns { text-align: center; margin: 0.5rem 0; }
+    .download-btns button { margin: 0 0.5rem; padding: 0.5rem 1rem; }
+    .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 100; align-items: center; justify-content: center; }
+    .modal.show { display: flex; }
+    .modal-content { background: white; padding: 1.5rem; border-radius: 8px; min-width: 300px; }
+    .modal-content h3 { margin-bottom: 1rem; }
+    .modal-content label { display: block; margin-bottom: 0.5rem; }
+    .modal-actions { margin-top: 1rem; text-align: right; }
+    .modal-actions button { margin-left: 0.5rem; }
+    .empty { text-align: center; color: #888; padding: 2rem; }
+    button { cursor: pointer; border: 1px solid #ccc; background: white; border-radius: 4px; }
+    button:hover { background: #f0f0f0; }
+    button.primary { background: #3498db; color: white; border-color: #2980b9; }
+    button.danger { background: #e74c3c; color: white; border-color: #c0392b; }
+  </style>
+</head>
+<body>
+  <header>
+    <div>
+      <h1>Filament Charts</h1>
+      <p>Manage your 3D-printing filament colors and generate clean listing charts</p>
+    </div>
+    <div class="header-actions">
+      <button id="importBtn">Import library</button>
+      <button id="exportBtn">Export library</button>
+    </div>
+  </header>
+  <div class="main">
+    <div class="left">
+      <div class="add-form">
+        <input type="color" id="addColor" value="#ff0000">
+        <input type="text" id="addName" placeholder="Name (max 48)" maxlength="48">
+        <input type="text" id="addHex" placeholder="#RRGGBB" maxlength="7">
+        <button id="addBtn" class="primary">Add</button>
+      </div>
+      <div class="toolbar">
+        <button id="selectAllBtn">Select all</button>
+        <button id="clearBtn">Clear</button>
+      </div>
+      <ul class="color-list" id="colorList"></ul>
+    </div>
+    <div class="right">
+      <div class="settings">
+        <label>Background <input type="color" id="bgColor" value="#ffffff"></label>
+        <label>Title <input type="text" id="chartTitle" placeholder="Optional title"></label>
+        <label>Columns (1–8) <input type="number" id="columns" min="1" max="8" value="4"></label>
+        <label>Swatch size (48–180) <input type="number" id="swatchSize" min="48" max="180" value="80"></label>
+        <label>Horizontal gap (0–160) <input type="number" id="gapX" min="0" max="160" value="16"></label>
+        <label>Vertical gap (0–160) <input type="number" id="gapY" min="0" max="160" value="24"></label>
+      </div>
+      <div class="download-btns">
+        <button id="downloadTop" class="primary">Download PNG</button>
+      </div>
+      <canvas id="preview" width="800" height="600"></canvas>
+      <div class="download-btns">
+        <button id="downloadBottom" class="primary">Download PNG</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal" id="editModal">
+    <div class="modal-content">
+      <h3>Edit color</h3>
+      <label>Name <input type="text" id="editName" maxlength="48"></label>
+      <label>Color <input type="color" id="editColor"></label>
+      <label>Hex <input type="text" id="editHex" maxlength="7"></label>
+      <div class="modal-actions">
+        <button id="editCancel">Cancel</button>
+        <button id="editSave" class="primary">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const STORAGE_KEY = 'filament-chart-library-v1';
+    let library = { colors: [], settings: { background: '#FFFFFF', title: '', columns: 4, swatch: 80, gapX: 16, gapY: 24 } };
+    let editingId = null;
+    let dragSrcIndex = null;
+
+    function normalizeHex(hex) {
+      if (!hex) return null;
+      hex = hex.trim().toUpperCase();
+      if (hex.startsWith('#')) hex = hex.slice(1);
+      if (/^[0-9A-F]{3}$/.test(hex)) {
+        hex = hex.split('').map(c => c + c).join('');
+      }
+      if (/^[0-9A-F]{6}$/.test(hex)) return '#' + hex;
+      return null;
+    }
+
+    function saveLibrary() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(library));
+    }
+
+    function loadLibrary() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (raw) {
+          const data = JSON.parse(raw);
+          if (data.colors && Array.isArray(data.colors)) library = data;
+        }
+      } catch (e) { console.error(e); }
+      applySettingsToUI();
+      renderList();
+      drawPreview();
+    }
+
+    function applySettingsToUI() {
+      const s = library.settings;
+      document.getElementById('bgColor').value = s.background || '#ffffff';
+      document.getElementById('chartTitle').value = s.title || '';
+      document.getElementById('columns').value = s.columns || 4;
+      document.getElementById('swatchSize').value = s.swatch || 80;
+      document.getElementById('gapX').value = s.gapX || 16;
+      document.getElementById('gapY').value = s.gapY || 24;
+    }
+
+    function updateSettingsFromUI() {
+      library.settings = {
+        background: document.getElementById('bgColor').value.toUpperCase(),
+        title: document.getElementById('chartTitle').value,
+        columns: Math.max(1, Math.min(8, parseInt(document.getElementById('columns').value) || 4)),
+        swatch: Math.max(48, Math.min(180, parseInt(document.getElementById('swatchSize').value) || 80)),
+        gapX: Math.max(0, Math.min(160, parseInt(document.getElementById('gapX').value) || 16)),
+        gapY: Math.max(0, Math.min(160, parseInt(document.getElementById('gapY').value) || 24))
+      };
+      saveLibrary();
+      drawPreview();
+    }
+
+    function renderList() {
+      const list = document.getElementById('colorList');
+      list.innerHTML = '';
+      library.colors.forEach((c, i) => {
+        const li = document.createElement('li');
+        li.className = 'color-item';
+        li.draggable = true;
+        li.dataset.index = i;
+        li.innerHTML = `
+          <span class="drag-handle">☰</span>
+          <input type="checkbox" ${c.selected ? 'checked' : ''} data-id="${c.id}">
+          <div class="color-chip" style="background:${c.hex}"></div>
+          <div class="color-info">
+            <div class="name">${escapeHtml(c.name)}</div>
+            <div class="hex">${c.hex}</div>
+          </div>
+          <div class="item-actions">
+            <button data-action="up" data-id="${c.id}">↑</button>
+            <button data-action="down" data-id="${c.id}">↓</button>
+            <button data-action="edit" data-id="${c.id}">Edit</button>
+            <button data-action="delete" data-id="${c.id}" class="danger">×</button>
+          </div>
+        `;
+        list.appendChild(li);
+      });
+    }
+
+    function escapeHtml(s) {
+      return s.replace(/[&<>"']/g, m => ({'&':'&','<':'<','>':'>','"':'"',"'":'&#39;'}[m]));
+    }
+
+    function drawPreview() {
+      const canvas = document.getElementById('preview');
+      const ctx = canvas.getContext('2d');
+      const selected = library.colors.filter(c => c.selected);
+      const s = library.settings;
+      const cols = s.columns;
+      const sw = s.swatch;
+      const gx = s.gapX;
+      const gy = s.gapY;
+      const titleH = s.title ? 40 : 0;
+      const rows = Math.ceil(selected.length / cols) || 1;
+      const w = cols * sw + (cols + 1) * gx;
+      const h = titleH + rows * (sw + 40) + (rows + 1) * gy;
+      canvas.width = Math.max(w, 400);
+      canvas.height = Math.max(h, 200);
+      ctx.fillStyle = s.background;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      if (selected.length === 0) {
+        ctx.fillStyle = '#888';
+        ctx.font = '16px system-ui';
+        ctx.textAlign = 'center';
+        ctx.fillText('No colors selected', canvas.width / 2, canvas.height / 2);
+        return;
+      }
+
+      if (s.title) {
+        ctx.fillStyle = '#222';
+        ctx.font = 'bold 20px system-ui';
+        ctx.textAlign = 'left';
+        ctx.fillText(s.title, gx, 28);
+      }
+
+      selected.forEach((c, idx) => {
+        const col = idx % cols;
+        const row = Math.floor(idx / cols);
+        const x = gx + col * (sw + gx);
+        const y = titleH + gy + row * (sw + 40 + gy);
+        // rounded rect
+        ctx.beginPath();
+        const r = 10;
+        ctx.moveTo(x + r, y);
+        ctx.arcTo(x + sw, y, x + sw, y + sw, r);
+        ctx.arcTo(x + sw, y + sw, x, y + sw, r);
+        ctx.arcTo(x, y + sw, x, y, r);
+        ctx.arcTo(x, y, x + sw, y, r);
+        ctx.closePath();
+        ctx.fillStyle = c.hex;
+        ctx.fill();
+        // name + hex
+        ctx.fillStyle = '#111';
+        ctx.font = '12px system-ui';
+        ctx.textAlign = 'center';
+        const name = c.name.length > 16 ? c.name.slice(0, 14) + '…' : c.name;
+        ctx.fillText(name, x + sw / 2, y + sw + 16);
+        ctx.font = '11px system-ui';
+        ctx.fillStyle = '#555';
+        ctx.fillText(c.hex, x + sw / 2, y + sw + 30);
+      });
+    }
+
+    // Events
+    document.getElementById('addBtn').onclick = () => {
+      const name = document.getElementById('addName').value.trim();
+      let hex = normalizeHex(document.getElementById('addHex').value || document.getElementById('addColor').value);
+      if (!name || name.length > 48 || !hex) {
+        alert('Please enter a valid name (1-48 chars) and hex color.');
+        return;
+      }
+      library.colors.push({ id: Math.random().toString(36).slice(2, 10), name, hex, selected: true });
+      document.getElementById('addName').value = '';
+      document.getElementById('addHex').value = '';
+      saveLibrary();
+      renderList();
+      drawPreview();
+    };
+
+    document.getElementById('addColor').oninput = e => {
+      document.getElementById('addHex').value = e.target.value.toUpperCase();
+    };
+    document.getElementById('addHex').oninput = e => {
+      const n = normalizeHex(e.target.value);
+      if (n) document.getElementById('addColor').value = n;
+    };
+
+    document.getElementById('selectAllBtn').onclick = () => {
+      library.colors.forEach(c => c.selected = true);
+      saveLibrary(); renderList(); drawPreview();
+    };
+    document.getElementById('clearBtn').onclick = () => {
+      library.colors.forEach(c => c.selected = false);
+      saveLibrary(); renderList(); drawPreview();
+    };
+
+    document.getElementById('colorList').addEventListener('change', e => {
+      if (e.target.type === 'checkbox') {
+        const id = e.target.dataset.id;
+        const c = library.colors.find(x => x.id === id);
+        if (c) c.selected = e.target.checked;
+        saveLibrary(); drawPreview();
+      }
+    });
+
+    document.getElementById('colorList').addEventListener('click', e => {
+      const btn = e.target.closest('button');
+      if (!btn) return;
+      const id = btn.dataset.id;
+      const action = btn.dataset.action;
+      const idx = library.colors.findIndex(c => c.id === id);
+      if (idx < 0) return;
+      if (action === 'delete') {
+        library.colors.splice(idx, 1);
+      } else if (action === 'up' && idx > 0) {
+        [library.colors[idx-1], library.colors[idx]] = [library.colors[idx], library.colors[idx-1]];
+      } else if (action === 'down' && idx < library.colors.length - 1) {
+        [library.colors[idx+1], library.colors[idx]] = [library.colors[idx], library.colors[idx+1]];
+      } else if (action === 'edit') {
+        editingId = id;
+        const c = library.colors[idx];
+        document.getElementById('editName').value = c.name;
+        document.getElementById('editColor').value = c.hex;
+        document.getElementById('editHex').value = c.hex;
+        document.getElementById('editModal').classList.add('show');
+        return;
+      }
+      saveLibrary(); renderList(); drawPreview();
+    });
+
+    // Drag and drop
+    document.getElementById('colorList').addEventListener('dragstart', e => {
+      const li = e.target.closest('.color-item');
+      if (!li) return;
+      dragSrcIndex = parseInt(li.dataset.index);
+      e.dataTransfer.effectAllowed = 'move';
+    });
+    document.getElementById('colorList').addEventListener('dragover', e => {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'move';
+    });
+    document.getElementById('colorList').addEventListener('drop', e => {
+      e.preventDefault();
+      const li = e.target.closest('.color-item');
+      if (!li || dragSrcIndex == null) return;
+      const dest = parseInt(li.dataset.index);
+      if (dest === dragSrcIndex) return;
+      const [moved] = library.colors.splice(dragSrcIndex, 1);
+      library.colors.splice(dest, 0, moved);
+      saveLibrary(); renderList(); drawPreview();
+      dragSrcIndex = null;
+    });
+
+    // Settings
+    ['bgColor', 'chartTitle', 'columns', 'swatchSize', 'gapX', 'gapY'].forEach(id => {
+      document.getElementById(id).oninput = updateSettingsFromUI;
+    });
+
+    // Edit modal
+    document.getElementById('editColor').oninput = e => {
+      document.getElementById('editHex').value = e.target.value.toUpperCase();
+    };
+    document.getElementById('editHex').oninput = e => {
+      const n = normalizeHex(e.target.value);
+      if (n) document.getElementById('editColor').value = n;
+    };
+    document.getElementById('editCancel').onclick = () => {
+      document.getElementById('editModal').classList.remove('show');
+      editingId = null;
+    };
+    document.getElementById('editSave').onclick = () => {
+      const name = document.getElementById('editName').value.trim();
+      const hex = normalizeHex(document.getElementById('editHex').value);
+      if (!name || !hex || name.length > 48) {
+        alert('Invalid name or hex.');
+        return;
+      }
+      const c = library.colors.find(x => x.id === editingId);
+      if (c) { c.name = name; c.hex = hex; }
+      document.getElementById('editModal').classList.remove('show');
+      editingId = null;
+      saveLibrary(); renderList(); drawPreview();
+    };
+
+    // Import / Export / Download using Tauri plugins (withGlobalTauri)
+    async function getTauri() {
+      return window.__TAURI__ || {};
+    }
+
+    document.getElementById('exportBtn').onclick = async () => {
+      try {
+        const { save } = (await getTauri()).dialog || {};
+        const { writeTextFile } = (await getTauri()).fs || {};
+        if (!save || !writeTextFile) { alert('Tauri dialog/fs not available. Run inside the desktop app.'); return; }
+        const path = await save({ defaultPath: 'filament-library.json', filters: [{ name: 'JSON', extensions: ['json'] }] });
+        if (path) {
+          await writeTextFile(path, JSON.stringify(library, null, 2));
+          alert('Library exported.');
+        }
+      } catch (e) { alert('Export failed: ' + e); }
+    };
+
+    document.getElementById('importBtn').onclick = async () => {
+      try {
+        const { open } = (await getTauri()).dialog || {};
+        const { readTextFile } = (await getTauri()).fs || {};
+        if (!open || !readTextFile) { alert('Tauri dialog/fs not available.'); return; }
+        const path = await open({ filters: [{ name: 'JSON', extensions: ['json'] }] });
+        if (path) {
+          const text = await readTextFile(path);
+          const data = JSON.parse(text);
+          if (data.colors && Array.isArray(data.colors)) {
+            library = data;
+            if (!library.settings) library.settings = { background: '#FFFFFF', title: '', columns: 4, swatch: 80, gapX: 16, gapY: 24 };
+            saveLibrary();
+            applySettingsToUI();
+            renderList();
+            drawPreview();
+            alert('Library imported.');
+          } else alert('Invalid library file.');
+        }
+      } catch (e) { alert('Import failed: ' + e); }
+    };
+
+    async function downloadPng() {
+      try {
+        const { save } = (await getTauri()).dialog || {};
+        const { writeFile } = (await getTauri()).fs || {};
+        if (!save || !writeFile) { alert('Tauri not available for save.'); return; }
+        const canvas = document.getElementById('preview');
+        const dataUrl = canvas.toDataURL('image/png');
+        const base64 = dataUrl.split(',')[1];
+        const binary = Uint8Array.from(atob(base64), c => c.charCodeAt(0));
+        const path = await save({ defaultPath: 'filament-chart.png', filters: [{ name: 'PNG', extensions: ['png'] }] });
+        if (path) {
+          await writeFile(path, binary);
+          alert('PNG saved.');
+        }
+      } catch (e) { alert('Download failed: ' + e); }
+    }
+    document.getElementById('downloadTop').onclick = downloadPng;
+    document.getElementById('downloadBottom').onclick = downloadPng;
+
+    // Init
+    loadLibrary();
+  </script>
+</body>
+</html>
